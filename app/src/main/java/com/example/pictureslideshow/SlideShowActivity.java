@@ -19,9 +19,14 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.TransitionOptions;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.FutureTarget;
 import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.transition.DrawableCrossFadeFactory;
+import com.bumptech.glide.request.transition.Transition;
+
+import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
 
 public class SlideShowActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -35,6 +40,7 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
     private ImageButton mSlideShowStop;
 
     FutureTarget<Drawable> futureTarget;
+    DrawableCrossFadeFactory crossFadeFactory = new DrawableCrossFadeFactory.Builder().setCrossFadeEnabled(true).build();
 
     Runnable mLoadImage = new Runnable() {
         @Override
@@ -42,6 +48,7 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
             try {
                 Glide.with(SlideShowActivity.this)
                         .load(futureTarget.get())
+                        .transition(withCrossFade(crossFadeFactory))
                         .placeholder(R.drawable.ic_placeholder)
                         .centerCrop()
                         .into(mSlideShow);
@@ -51,6 +58,7 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
                         .asDrawable()
                         .apply(RequestOptions.skipMemoryCacheOf(true))
                         .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
+                        .centerCrop()
                         .load(IMAGE_SOURCE).submit();
             }
             catch (Exception e){
@@ -122,9 +130,26 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
                 Glide.with(SlideShowActivity.this)
                         .clear(mSlideShow);
                 mSlideShowPlayback.setImageDrawable(getResources().getDrawable(R.drawable.ic_play, getTheme()));
+                isPlaying = false;
                 mHandler.removeCallbacks(mLoadImage);
                 Toast.makeText(SlideShowActivity.this, R.string.slide_show_stop_message, Toast.LENGTH_SHORT).show();
                 break;
+        }
+    }
+
+    private void hideSystemStatusBar(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsetsController controller = getWindow().getInsetsController();
+            if(controller != null){
+                controller.hide(WindowInsets.Type.statusBars());
+                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        }
+        else {
+                    getWindow().setFlags(
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN
+            );
         }
     }
 }
