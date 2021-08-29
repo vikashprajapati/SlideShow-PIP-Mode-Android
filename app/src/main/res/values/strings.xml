@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">PictureSlideShow</string>
+    <string name="slide_show_stop_message">Slideshow stopped</string>
 </resources>
