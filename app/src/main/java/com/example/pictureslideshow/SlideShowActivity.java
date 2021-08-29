@@ -21,18 +21,29 @@ public class SlideShowActivity extends AppCompatActivity {
     private Handler mHandler;
 
     private ImageView mSlideShow;
+    private ImageButton mSlideShowPlayback;
+    private boolean isPlaying = true;
+    private ImageButton mSlideShowStop;
+
+    FutureTarget<Drawable> futureTarget;
 
     Runnable mLoadImage = new Runnable() {
         @Override
         public void run() {
             try {
+                Drawable image = futureTarget.get();
                 Glide.with(SlideShowActivity.this)
-                        .load(IMAGE_SOURCE)
-                        .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
-                        .apply(RequestOptions.skipMemoryCacheOf(true))
+                        .load(image)
                         .placeholder(R.drawable.ic_placeholder)
                         .centerCrop()
                         .into(mSlideShow);
+
+                // prefetching the image for lazyloading
+                futureTarget = Glide.with(SlideShowActivity.this)
+                        .asDrawable()
+                        .apply(RequestOptions.skipMemoryCacheOf(true))
+                        .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
+                        .load(IMAGE_SOURCE).submit();
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -50,6 +61,11 @@ public class SlideShowActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_slide_show);
         mHandler = new Handler(this.getMainLooper());
+
+        futureTarget = Glide.with(SlideShowActivity.this)
+                .asDrawable()
+                .apply(RequestOptions.skipMemoryCacheOf(true))
+                .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE)).load(IMAGE_SOURCE).submit();
     }
 
     @Override
