@@ -1,10 +1,13 @@
 package com.example.pictureslideshow;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowCompat;
 
+import android.annotation.TargetApi;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -64,6 +67,8 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
         setContentView(R.layout.activity_slide_show);
         mHandler = new Handler(this.getMainLooper());
 
@@ -83,6 +88,7 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
 
         mSlideShowStop = findViewById(R.id.ib_stop);
         mSlideShowStop.setOnClickListener(this);
+
     }
 
     @Override
