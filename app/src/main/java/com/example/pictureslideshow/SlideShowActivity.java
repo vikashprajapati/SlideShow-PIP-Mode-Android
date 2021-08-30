@@ -102,14 +102,22 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
     @Override
     protected void onResume() {
         super.onResume();
-        mLoadImage.run();
-        mSlideShowPlayback.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
+        App app = (App)getApplicationContext();
+        if(app.getActivityReferences() == 1) {
+            mLoadImage.run();
+            mSlideShowPlayback.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mHandler.removeCallbacks(mLoadImage);
+        App app = (App)getApplicationContext();
+        if(app.getActivityReferences() == 1){
+            enterPictureInPictureMode();
+        }else{
+            mHandler.removeCallbacks(mLoadImage);
+        }
     }
 
     @Override
@@ -134,22 +142,6 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
                 mHandler.removeCallbacks(mLoadImage);
                 Toast.makeText(SlideShowActivity.this, R.string.slide_show_stop_message, Toast.LENGTH_SHORT).show();
                 break;
-        }
-    }
-
-    private void hideSystemStatusBar(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowInsetsController controller = getWindow().getInsetsController();
-            if(controller != null){
-                controller.hide(WindowInsets.Type.statusBars());
-                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-            }
-        }
-        else {
-                    getWindow().setFlags(
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN
-            );
         }
     }
 }
