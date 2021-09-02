@@ -4,12 +4,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 
 import android.annotation.TargetApi;
+import android.app.PendingIntent;
+import android.app.PictureInPictureParams;
+import android.app.RemoteAction;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Rational;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -26,6 +32,9 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory;
 import com.bumptech.glide.request.transition.Transition;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
 
 public class SlideShowActivity extends AppCompatActivity implements View.OnClickListener {
@@ -38,6 +47,7 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
     private ImageButton mSlideShowPlayback;
     private boolean isPlaying = true;
     private ImageButton mSlideShowStop;
+    private List<RemoteAction> actions = new ArrayList<>();
 
     FutureTarget<Drawable> futureTarget;
     DrawableCrossFadeFactory crossFadeFactory = new DrawableCrossFadeFactory.Builder().setCrossFadeEnabled(true).build();
@@ -84,6 +94,15 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
                 .asDrawable()
                 .apply(RequestOptions.skipMemoryCacheOf(true))
                 .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE)).load(IMAGE_SOURCE).submit();
+
+
+        RemoteAction pauseAction = new RemoteAction(
+                Icon.createWithResource(this, R.drawable.ic_pause),
+                getString(R.string.btn_playback),
+                getString(R.string.btn_playback),
+                PendingIntent.getBroadcast(this, 0, new Intent("PAUSE"), PendingIntent.FLAG_UPDATE_CURRENT)
+        );
+        actions.add(pauseAction);
     }
 
     @Override
@@ -114,25 +133,33 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
         super.onPause();
         App app = (App)getApplicationContext();
         if(app.getActivityReferences() == 1){
-            enterPictureInPictureMode();
+            PictureInPictureParams pictureInPictureParams = new PictureInPictureParams
+                    .Builder()
+                    .setActions(actions)
+                    .build();
+            enterPictureInPictureMode(pictureInPictureParams);
         }else{
             mHandler.removeCallbacks(mLoadImage);
         }
+    }
+
+    private void handlePlayback(){
+        if(isPlaying){
+            mHandler.removeCallbacks(mLoadImage);
+            mSlideShowPlayback.setImageDrawable(getResources().getDrawable(R.drawable.ic_play, getTheme()));
+        }
+        else{
+            mLoadImage.run();
+            mSlideShowPlayback.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
+        }
+        isPlaying = !isPlaying;
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.ib_playback:
-                if(isPlaying){
-                    mHandler.removeCallbacks(mLoadImage);
-                    mSlideShowPlayback.setImageDrawable(getResources().getDrawable(R.drawable.ic_play, getTheme()));
-                }
-                else{
-                    mLoadImage.run();
-                    mSlideShowPlayback.setImageDrawable(getResources().getDrawable(R.drawable.ic_pause, getTheme()));
-                }
-                isPlaying = !isPlaying;
+                handlePlayback();
                 break;
             case R.id.ib_stop:
                 Glide.with(SlideShowActivity.this)
@@ -143,5 +170,21 @@ public class SlideShowActivity extends AppCompatActivity implements View.OnClick
                 Toast.makeText(SlideShowActivity.this, R.string.slide_show_stop_message, Toast.LENGTH_SHORT).show();
                 break;
         }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode);
+        if(isInPictureInPictureMode){
+            updateVisibility(View.GONE);
+        }
+        else{
+            updateVisibility(View.VISIBLE);
+        }
+    }
+
+    private void updateVisibility(int val){
+        mSlideShowPlayback.setVisibility(val);
+        mSlideShowStop.setVisibility(val);
     }
 }
